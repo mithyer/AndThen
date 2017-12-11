@@ -8,52 +8,14 @@
 
 
 public protocol Action {
-    
-    func excute()
-    
-    func and(_ action: Action) -> Action
-    
-    func then(_ action: Action) -> Action
-    
-    func `repeat`(_ willExcuteHandler: @escaping (_ didRepeatTime: UInt) -> Bool) -> Self
-    
+    func excute(_ doneCallback: @escaping () -> Void)
+    var repeatEnabled: Bool { get }
 }
 
-
-
-public extension Action {
-    
-    public func and(_ action: Action) -> Action {
-        if let i = self as? ActionGroup {
-            return i.and(action)
-        } else if let action = action as? ActionGroup {
-            switch action.excuteType {
-            case .spawn:
-                action.append(element: self)
-                return action
-            default:break
-            }
-        }
-        return ActionGroup(elements: [self, action], excuteType: .spawn)
-    }
-    
-    public func then(_ action: Action) -> Action {
-        if let i = self as? ActionGroup {
-            return i.then(action)
-        } else if let action = action as? ActionGroup {
-            switch action.excuteType {
-            case .sequence:
-                action.insert(element: self)
-                return action
-            default:break
-            }
-        }
-        return ActionGroup(elements: [self, action], excuteType: .sequence)
-    }
-}
 
 public struct AtomicProperty<T> {
-    private lazy var lock = DispatchSemaphore(value: 1)
+    
+    private var lock = DispatchSemaphore(value: 1)
     private var _value: T
     
     init(_ value: T) {
@@ -72,48 +34,50 @@ public struct AtomicProperty<T> {
             lock.signal()
         }
     }
+    
 }
 
 
 public class DelayAction: Action {
     
     private var delaySecond: TimeInterval
-    private var willExcuteHandler: ((UInt) -> Bool)?
-    private var repeatTime: UInt = 0
+    private var repeatCount: UInt = 0
     private var isExcuting: AtomicProperty<Bool> = AtomicProperty<Bool>(false)
-    
+    public internal(set) var repeatEnabled: Bool = false
+
     init(_ delaySecond: TimeInterval) {
         self.delaySecond = delaySecond
     }
     
-    public func excute() {
-        if self.isExcuting.value {
+    public func excute(_ doneCallback: @escaping () -> Void) {
+        if self.isExcuting.value && repeatCount < 1 {
             return
         }
+        self.isExcuting.value = true
         let wait = {
             let semp = DispatchSemaphore(value: 0)
-            let _ = semp.wait(timeout: DispatchTime(uptimeNanoseconds: UInt64(self.delaySecond * 1000 * 1000)))
+            let _ = semp.wait(timeout: DispatchTime(uptimeNanoseconds: UInt64(self.delaySecond * 10e6)))
+        }
+        let done = {
+            self.isExcuting.value = false
+            self.repeatCount = 0
+            self.repeatEnabled = false
+            doneCallback()
         }
         
-        if let willExcute = self.willExcuteHandler?(repeatTime) {
+        if let willExcute = self.willExcuteHandler?(repeatCount) {
             if willExcute {
-                self.isExcuting.value = true
                 wait()
-                repeatTime += 1
-                excute()
+                repeatCount += 1
+                excute(doneCallback)
+            } else {
+                done()
             }
         } else {
             wait()
+            done()
         }
     }
-    
-    public func `repeat`(_ willExcuteHandler: @escaping (UInt) -> Bool) -> Self {
-        self.willExcuteHandler = willExcuteHandler
-        return self
-    }
-    
-    
-    
     
 }
 
