@@ -7,11 +7,53 @@
 //
 
 
+
+var ActionExcuteQueue = DispatchQueue(label: "ActionExcuteQueue", attributes: .concurrent)
+
 public protocol Action {
     func excute(_ doneCallback: @escaping () -> Void)
     var repeatEnabled: Bool { get }
 }
 
+public class WorkAction: Action {
+    
+    var work: () -> Void
+    
+    init(_ work: @escaping () -> Void) {
+        self.work = work
+    }
+    
+    public func excute(_ doneCallback: @escaping () -> Void) {
+        ActionExcuteQueue.async {
+            self.work()
+            doneCallback()
+        }
+    }
+}
+
+
+public class DelayAction: Action {
+    
+    private var delaySecond: TimeInterval
+    private var isExcuting: AtomicProperty<Bool> = AtomicProperty<Bool>(false)
+
+    init(_ delaySecond: TimeInterval) {
+        self.delaySecond = delaySecond
+    }
+    
+    public func excute(_ doneCallback: @escaping () -> Void) {
+        if self.isExcuting.value {
+            return
+        }
+        self.isExcuting.value = true
+        let semp = DispatchSemaphore(value: 0)
+        ActionExcuteQueue.async {
+            let _ = semp.wait(timeout: DispatchTime(uptimeNanoseconds: UInt64(self.delaySecond * 10e6)))
+            self.isExcuting.value = false
+            doneCallback()
+        }
+    }
+}
 
 public struct AtomicProperty<T> {
     
@@ -34,50 +76,6 @@ public struct AtomicProperty<T> {
             lock.signal()
         }
     }
-    
 }
 
-
-public class DelayAction: Action {
-    
-    private var delaySecond: TimeInterval
-    private var repeatCount: UInt = 0
-    private var isExcuting: AtomicProperty<Bool> = AtomicProperty<Bool>(false)
-    public internal(set) var repeatEnabled: Bool = false
-
-    init(_ delaySecond: TimeInterval) {
-        self.delaySecond = delaySecond
-    }
-    
-    public func excute(_ doneCallback: @escaping () -> Void) {
-        if self.isExcuting.value && repeatCount < 1 {
-            return
-        }
-        self.isExcuting.value = true
-        let wait = {
-            let semp = DispatchSemaphore(value: 0)
-            let _ = semp.wait(timeout: DispatchTime(uptimeNanoseconds: UInt64(self.delaySecond * 10e6)))
-        }
-        let done = {
-            self.isExcuting.value = false
-            self.repeatCount = 0
-            self.repeatEnabled = false
-            doneCallback()
-        }
-        
-        if let willExcute = self.willExcuteHandler?(repeatCount) {
-            if willExcute {
-                wait()
-                repeatCount += 1
-                excute(doneCallback)
-            } else {
-                done()
-            }
-        } else {
-            wait()
-            done()
-        }
-    }
-    
-}
 

@@ -7,11 +7,9 @@
 //
 
 public class ActionGroup: Group<Action>, Action {
-    
+
     private var repeatTime: UInt = 0
     public internal(set) var repeatEnabled: Bool = false
-    
-    public lazy var excute_queue = DispatchQueue(label: "ActionGroup excute_queue", attributes: .concurrent)
     
     private var isExcuting: AtomicProperty<Bool> = AtomicProperty<Bool>(false)
 
@@ -28,7 +26,7 @@ public class ActionGroup: Group<Action>, Action {
         }
         let sequenceExcute: (_ sequenceDone: @escaping () -> Void) -> Void = { sequenceDone in
             let semp = DispatchSemaphore(value: 0)
-            self.excute_queue.async {
+            ActionExcuteQueue.async {
                 for action in self {
                     action.excute({
                         semp.signal()
@@ -42,17 +40,17 @@ public class ActionGroup: Group<Action>, Action {
             let dispatch_group = DispatchGroup()
             for action in self {
                 dispatch_group.enter()
-                self.excute_queue.async {
+                ActionExcuteQueue.async {
                     action.excute({
                         dispatch_group.leave()
                     })
                 }
             }
-            dispatch_group.notify(queue: self.excute_queue, execute: spawnDone)
+            dispatch_group.notify(queue: ActionExcuteQueue, execute: spawnDone)
         }
         switch excuteType {
         case .sequence:
-            excute_queue.async {
+            ActionExcuteQueue.async {
                 if self.repeatEnabled {
                     if self.willExcuteHandler!(self.repeatTime) {
                         sequenceExcute {

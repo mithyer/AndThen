@@ -11,7 +11,7 @@ import Foundation
 var willExcuteHandlerKey: UInt8 = 0
 
 public extension Action {
-    
+
     var repeatEnabled: Bool {
         return false
     }
