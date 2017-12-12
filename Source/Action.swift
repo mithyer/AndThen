@@ -19,7 +19,7 @@ public class WorkAction: Action {
     
     var work: () -> Void
     
-    init(_ work: @escaping () -> Void) {
+    public init(_ work: @escaping () -> Void) {
         self.work = work
     }
     
@@ -37,7 +37,7 @@ public class DelayAction: Action {
     private var delaySecond: TimeInterval
     private var isExcuting: AtomicProperty<Bool> = AtomicProperty<Bool>(false)
 
-    init(_ delaySecond: TimeInterval) {
+    public init(_ delaySecond: TimeInterval) {
         self.delaySecond = delaySecond
     }
     

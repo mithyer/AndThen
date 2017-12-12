@@ -52,7 +52,12 @@ public class ActionGroup: Group<Action>, Action {
         case .sequence:
             ActionExcuteQueue.async {
                 if self.repeatEnabled {
-                    if self.willExcuteHandler!(self.repeatTime) {
+                    var delay: TimeInterval?
+                    if self.willExcuteHandler!(self.repeatTime, &delay) {
+                        if let delay = delay {
+                            let wait = DispatchSemaphore(value: 0)
+                            let _ = wait.wait(timeout: DispatchTime(uptimeNanoseconds: UInt64(delay * 10e6)))
+                        }
                         sequenceExcute {
                             self.repeatTime += 1
                             self.excute(doneCallback)
@@ -78,7 +83,12 @@ public class ActionGroup: Group<Action>, Action {
             }
             
             if self.repeatEnabled {
-                if self.willExcuteHandler!(self.repeatTime) {
+                var delay: TimeInterval?
+                if self.willExcuteHandler!(self.repeatTime, &delay) {
+                    if let delay = delay {
+                        let wait = DispatchSemaphore(value: 0)
+                        let _ = wait.wait(timeout: DispatchTime(uptimeNanoseconds: UInt64(delay * 10e6)))
+                    }
                     spawnExcute(spawnDone)
                 } else {
                     done()

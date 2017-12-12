@@ -48,10 +48,11 @@ action.excute{}
 Or repeat your action:
 
 ```
-(a0.repeat { count -> Bool in
+(a0.repeat { count, delay -> Bool in
+    delay = 5
     return count < 3  // this closure will be call before every excute in repeats, return false to stop repeat
 } --> a1).excute{}
-// a0 will repeat 3 times before a1 excute
+// a0 will repeat 3 times before a1 excute with each delay 5 seconds
 ```
 
 All excute is **async**

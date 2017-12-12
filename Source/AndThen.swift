@@ -44,16 +44,16 @@ public extension Action {
         return ActionGroup(elements: [self, action], excuteType: .sequence)
     }
         
-    var willExcuteHandler: ((UInt) -> Bool)? {
+    var willExcuteHandler: ((_ repeatCount: UInt, _ delay: inout TimeInterval?) -> Bool)? {
         get {
-            return objc_getAssociatedObject(self, &willExcuteHandlerKey) as? ((UInt) -> Bool)
+            return objc_getAssociatedObject(self, &willExcuteHandlerKey) as? ((_ repeatCount: UInt, _ delay: inout TimeInterval?) -> Bool)
         }
         set(new) {
             objc_setAssociatedObject(self, &willExcuteHandlerKey, new, .OBJC_ASSOCIATION_COPY_NONATOMIC)
         }
     }
     
-    mutating public func `repeat`(_ willExcuteHandler: @escaping (UInt) -> Bool) -> Action {
+    public func `repeat`(_ willExcuteHandler: @escaping (_ repeatCount: UInt, _ delay: inout TimeInterval?) -> Bool) -> Action {
         var group = ActionGroup(elements: [self], excuteType: .sequence)
         group.repeatEnabled = true
         group.willExcuteHandler = willExcuteHandler
