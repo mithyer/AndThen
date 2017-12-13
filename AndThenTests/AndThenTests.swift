@@ -183,6 +183,44 @@ class AndThenTests: XCTestCase {
 
     }
     
+    func testPass() {
+        let workExct: XCTestExpectation = self.expectation(description: "workExct")
+        workExct.expectedFulfillmentCount = 1
+        workExct.assertForOverFulfill = true
+        
+        let subWorkExct: XCTestExpectation = self.expectation(description: "subWorkExct")
+        subWorkExct.expectedFulfillmentCount = 2
+        subWorkExct.assertForOverFulfill = true
+        
+        let doneExct: XCTestExpectation = self.expectation(description: "doneExct")
+
+        WorkAction {
+            workExct.fulfill()
+        }.excute {
+            let work = WorkAction {
+                subWorkExct.fulfill()
+            }
+            work.repeat({ time, delay -> Bool in
+                if time == 2 {
+                    work.passEnabled.value = true
+                }
+                return time < 3
+            }).excute {
+                doneExct.fulfill()
+            }
+            
+        }
+        
+        let work = WorkAction {
+            workExct.fulfill()
+        }
+        work.passEnabled.value = true
+        work.excute {}
+        
+        self.wait(for: [workExct, subWorkExct, doneExct], timeout: 10, enforceOrder: true)
+
+    }
+    
     func testPerformanceExample() {
         // This is an example of a performance test case.
         self.measure {

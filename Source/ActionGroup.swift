@@ -11,12 +11,17 @@ public class ActionGroup: Group<Action>, Action {
     private var repeatTime: UInt = 0
     public internal(set) var repeatEnabled: Bool = false
     var willExcuteHandler: ((_ repeatCount: UInt, _ delay: inout TimeInterval?) -> Bool)?
+    public var passEnabled: AtomicProperty<Bool> = AtomicProperty<Bool>(false)
     
     public func excute(_ doneCallback: @escaping () -> Void) {
         let done = {
             self.repeatTime = 0
             self.repeatEnabled = false
             doneCallback()
+        }
+        if passEnabled.value {
+            done()
+            return
         }
         let sequenceExcute: (_ sequenceDone: @escaping () -> Void) -> Void = { sequenceDone in
             let semp = DispatchSemaphore(value: 0)

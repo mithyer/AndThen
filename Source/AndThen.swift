@@ -130,6 +130,7 @@ public struct AtomicProperty<T> {
             lock.signal()
         }
     }
+
 }
 
 infix operator -->: AdditionPrecedence

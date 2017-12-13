@@ -7,7 +7,7 @@
 //
 
 
-open class Group<T>: Sequence {
+public class Group<T>: Sequence {
     
     var allElements: [T] = []
     
