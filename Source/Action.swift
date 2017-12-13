@@ -34,11 +34,11 @@ public class WorkAction: Action {
 
 public class DelayAction: Action {
     
-    private var delaySecond: TimeInterval
+    private var delaySeconds: TimeInterval
     private var isExcuting: AtomicProperty<Bool> = AtomicProperty<Bool>(false)
 
-    public init(_ delaySecond: TimeInterval) {
-        self.delaySecond = delaySecond
+    public init(_ delaySeconds: TimeInterval) {
+        self.delaySeconds = delaySeconds
     }
     
     public func excute(_ doneCallback: @escaping () -> Void) {
@@ -48,7 +48,7 @@ public class DelayAction: Action {
         self.isExcuting.value = true
         let semp = DispatchSemaphore(value: 0)
         ActionExcuteQueue.async {
-            let _ = semp.wait(timeout: DispatchTime(uptimeNanoseconds: UInt64(self.delaySecond * 10e6)))
+            let _ = semp.wait(timeout: .now() + self.delaySeconds)
             self.isExcuting.value = false
             doneCallback()
         }

@@ -56,7 +56,7 @@ public class ActionGroup: Group<Action>, Action {
                     if self.willExcuteHandler!(self.repeatTime, &delay) {
                         if let delay = delay {
                             let wait = DispatchSemaphore(value: 0)
-                            let _ = wait.wait(timeout: DispatchTime(uptimeNanoseconds: UInt64(delay * 10e6)))
+                            let _ = wait.wait(timeout: .now() + delay)
                         }
                         sequenceExcute {
                             self.repeatTime += 1
