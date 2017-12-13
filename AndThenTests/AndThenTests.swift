@@ -154,7 +154,6 @@ class AndThenTests: XCTestCase {
         WorkAction {
             workExct1.fulfill()
         }.repeat { count, delay -> Bool in
-            print("1: count\(count)")
             delay = 2
             return count < repeatTime
         }.excute {
@@ -168,7 +167,6 @@ class AndThenTests: XCTestCase {
         WorkAction {
             workExct2.fulfill()
         }.repeat { count, delay -> Bool in
-            print("2: count\(count)")
             delay = 1
             return count < repeatTime
         }.excute {
@@ -178,7 +176,6 @@ class AndThenTests: XCTestCase {
         let work3DoneExct: XCTestExpectation = self.expectation(description: "work3DoneExct")
 
         DelayAction(7).excute {
-            print("3")
             work3DoneExct.fulfill()
         }
 

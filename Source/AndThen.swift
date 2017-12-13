@@ -8,7 +8,6 @@
 
 import Foundation
 
-var willExcuteHandlerKey: UInt8 = 0
 
 public extension Action {
 
@@ -43,23 +42,12 @@ public extension Action {
         }
         return ActionGroup(elements: [self, action], excuteType: .sequence)
     }
-        
-    var willExcuteHandler: ((_ repeatCount: UInt, _ delay: inout TimeInterval?) -> Bool)? {
-        get {
-            return objc_getAssociatedObject(self, &willExcuteHandlerKey) as? ((_ repeatCount: UInt, _ delay: inout TimeInterval?) -> Bool)
-        }
-        set(new) {
-            objc_setAssociatedObject(self, &willExcuteHandlerKey, new, .OBJC_ASSOCIATION_COPY_NONATOMIC)
-        }
-    }
     
     public func `repeat`(_ willExcuteHandler: @escaping (_ repeatCount: UInt, _ delay: inout TimeInterval?) -> Bool) -> Action {
-        var group = ActionGroup(elements: [self], excuteType: .sequence)
-        group.repeatEnabled = true
-        group.willExcuteHandler = willExcuteHandler
-        return group
+        return ActionGroup(elements: [self], excuteType: .sequence).repeat(willExcuteHandler)
     }
 }
+
 
 public extension ActionGroup {
     
@@ -110,6 +98,38 @@ public extension ActionGroup {
         return self
     }
     
+    public func `repeat`(_ willExcuteHandler: @escaping (UInt, inout TimeInterval?) -> Bool) -> Action {
+        if self.repeatEnabled {
+            return ActionGroup(elements: self.allElements, excuteType: self.excuteType).repeat(willExcuteHandler)
+        }
+        self.repeatEnabled = true
+        self.willExcuteHandler = willExcuteHandler
+        return self
+    }
+    
+}
+
+public struct AtomicProperty<T> {
+    
+    private var lock = DispatchSemaphore(value: 1)
+    private var _value: T
+    
+    init(_ value: T) {
+        _value = value
+    }
+    
+    public var value: T {
+        mutating get {
+            lock.wait()
+            defer { lock.signal() }
+            return _value
+        }
+        mutating set(new) {
+            lock.wait()
+            _value = new
+            lock.signal()
+        }
+    }
 }
 
 infix operator -->: AdditionPrecedence

@@ -10,17 +10,11 @@ public class ActionGroup: Group<Action>, Action {
 
     private var repeatTime: UInt = 0
     public internal(set) var repeatEnabled: Bool = false
+    var willExcuteHandler: ((_ repeatCount: UInt, _ delay: inout TimeInterval?) -> Bool)?
     
-    private var isExcuting: AtomicProperty<Bool> = AtomicProperty<Bool>(false)
-
     public func excute(_ doneCallback: @escaping () -> Void) {
-        if isExcuting.value && self.repeatTime < 1 {
-            return
-        }
-        self.isExcuting.value = true
         let done = {
             self.repeatTime = 0
-            self.isExcuting.value = false
             self.repeatEnabled = false
             doneCallback()
         }
@@ -73,7 +67,6 @@ public class ActionGroup: Group<Action>, Action {
             }
         case .spawn:
             let spawnDone = {
-                self.isExcuting.value = false
                 if !self.repeatEnabled {
                     done()
                 } else {
@@ -87,7 +80,7 @@ public class ActionGroup: Group<Action>, Action {
                 if self.willExcuteHandler!(self.repeatTime, &delay) {
                     if let delay = delay {
                         let wait = DispatchSemaphore(value: 0)
-                        let _ = wait.wait(timeout: DispatchTime(uptimeNanoseconds: UInt64(delay * 10e6)))
+                        let _ = wait.wait(timeout: .now() + delay)
                     }
                     spawnExcute(spawnDone)
                 } else {
