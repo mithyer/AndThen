@@ -58,8 +58,10 @@ public extension ActionGroup {
         if let action = action as? ActionGroup {
             switch (excuteType, action.excuteType) {
             case (.spawn, .spawn):
-                self.append(elements: action.allElements)
-                return self
+                if let all = action.allElements {
+                    self.append(elements: all)
+                    return self
+                }
             case (.spawn, .sequence):
                 self.append(element: action)
                 return self
@@ -90,8 +92,10 @@ public extension ActionGroup {
                 append(element: action)
                 return self
             case (.sequence, .sequence):
-                append(elements: action.allElements)
-                return self
+                if let all = action.allElements {
+                    self.append(elements: all)
+                    return self
+                }
             }
         }
         append(element: action)

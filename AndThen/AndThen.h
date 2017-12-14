@@ -6,7 +6,7 @@
 //  Copyright © 2017年 ray. All rights reserved.
 //
 
-#import <UIKit/UIKit.h>
+#import <Foundation/Foundation.h>
 
 //! Project version number for AndThen.
 FOUNDATION_EXPORT double AndThenVersionNumber;
