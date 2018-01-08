@@ -202,7 +202,7 @@ class AndThenTests: XCTestCase {
             }
             work.repeat({ time, delay -> Bool in
                 if time == 2 {
-                    work.passEnabled.value = true
+                    work.isPassEnabled.value = true
                 }
                 return time < 3
             }).excute {
@@ -214,7 +214,7 @@ class AndThenTests: XCTestCase {
         let work = WorkAction {
             workExct.fulfill()
         }
-        work.passEnabled.value = true
+        work.isPassEnabled.value = true
         work.excute {}
         
         self.wait(for: [workExct, subWorkExct, doneExct], timeout: 10, enforceOrder: true)
